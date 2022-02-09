@@ -3,16 +3,21 @@
 <head>
     <meta charset="UTF-8">
     <meta http-equiv="Pragma" content="no-cache">  <!-- 禁止瀏覽器用快取開啟網頁 -->
-    <title>3. htmlWithJS.html</title>
+    <title>嵌入式Javascript</title>
 </head>
-<body>
-    <p>誰、什麼時候、做什麼</p>
-    <img src="1492502309917.gif">
-    <br>
-    
-    <button id="my-button">+1</button>
-    <div id="text-div"></div>
+<body style="text-align: center;">
+    <div style="display: flex;justify-content: space-between;">
+        <div>
+            <p>JS的訣竅: 搞懂<h1>誰、什麼時候、做什麼</h1></p>
+            <br>
+        
+            <p id="text-div" style="font-size: 4rem;"></p>
+            <button id="my-button">按我上面的數字就會+1，你敢不敢?</button>
+        </div>
+        <img src="1492502309917.gif">
+    </div>
 
+    <!-- 嵌入式Javascript -->
     <script>
         var countNum = 0
         updateCountNumber()
