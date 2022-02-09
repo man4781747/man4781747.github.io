@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="Pragma" content="no-cache">  <!-- 禁止瀏覽器用快取開啟網頁 -->
+    <meta name="author" content="Akira Chen">
+
+    <meta name="description" content="這裡是網頁的簡短描述">
+    <meta name="keywords" content="關鍵字 1,關鍵字 2">
+    <title>2. htmlWithCSS</title>
+    <!-- 嵌入式 -->
+    <style>
+        body {
+            background-color: powderblue;
+        }
+
+        p    {color: blue;}
+
+        #id-test {
+            color: darkcyan;
+        }
+
+        .class-test {
+            color: red;
+        }
+
+        div .class-test {
+            color: saddlebrown;
+        }
+
+        div .class-test:hover label{
+            color: salmon;
+        }
+
+        a:link{
+            color: green;
+        }
+
+        a:visited{
+            color: orange;
+        }
+
+        a:hover{
+            color: white;
+            background-color: black;
+        }
+
+        a:active{
+            color: red;
+        }
+
+    </style>
+    
+    <!-- 連結式 -->
+    <!-- <link rel=stylesheet type="text/css" href="main.css"> -->
+
+    <!-- 匯入式 -->
+    <!-- <style type="text/css">
+        @import "style.css";
+    </style> -->
+</head>
+<body>
+    <a href="https://www.w3schools.com/css/css_selectors.asp" target="_blank">CSS 選擇器介紹</a>
+    <p>這是內容</p>
+
+    <!-- CSS position -->
+
+    <p class="class-test">這是內容(class = class-test)</p>
+    <p class="class-test">這是內容(class = class-test)</p>
+    <p id="id-test" class="class-test">這是內容(id = id-test)</p>
+
+    <a href="file:///C:/Users/man47/OneDrive/Vue%E4%BB%8B%E7%B4%B9/example/2.%20htmlWithCSS/main.html" target="_blank">123</a>
+    <div>
+        <p class="class-test">這是內容(多層)
+            <label>132</label>
+        </p>
+    </div>
+    <img src="我都看得好興奮.JPG">
+</body>
+</html>

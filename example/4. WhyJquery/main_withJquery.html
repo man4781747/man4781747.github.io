@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="Pragma" content="no-cache">  <!-- 禁止瀏覽器用快取開啟網頁 -->
+    <title>4. main_without_Jquery.html</title>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js" integrity="sha256-/xUj+3OJU5yExlq6GSYGSHk7tPXikynS7ogEvDej/m4=" crossorigin="anonymous"></script>
+</head>
+<body>
+    <img src="殼蟻.png">
+    <br>
+    <ol id="my-list">
+    </ol>
+    <input id="my-input">
+    <button id="my-button">Add to list</button>
+    <script>
+        var myList = document.getElementById("my-list")
+        var myInput= document.getElementById("my-input")
+        var myBtn = document.getElementById("my-button")
+        
+        myBtn.addEventListener(
+            'click',
+            function (event) {
+                addTestIntoList()
+            }
+        );
+        
+        function addTestIntoList(){
+            let newItem = document.createElement("li")
+            newItem.innerText = myInput.value
+            myList.appendChild(newItem)
+            myInput.value = ''
+        }
+    </script>
+</body>
+</html>

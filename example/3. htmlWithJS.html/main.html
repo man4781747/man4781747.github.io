@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="Pragma" content="no-cache">  <!-- 禁止瀏覽器用快取開啟網頁 -->
+    <title>3. htmlWithJS.html</title>
+</head>
+<body>
+    <p>誰、什麼時候、做什麼</p>
+    <img src="1492502309917.gif">
+    <br>
+    
+    <button id="my-button">+1</button>
+    <div id="text-div"></div>
+
+    <script>
+        var countNum = 0
+        updateCountNumber()
+        // 誰
+        var myBtn = document.getElementById("my-button")
+        test = document.createElement("div")
+        test.style.color=""
+        myBtn.appendChild(test)
+        
+        myBtn.addEventListener(
+            'click', // 什麼時候
+            function (event) { // 做什麼
+                countNum += 1
+                updateCountNumber()
+            }
+        );
+
+        function updateCountNumber(){
+            var myDiv = document.getElementById("text-div")
+            myDiv.innerText = countNum
+        }
+    </script>
+</body>
+</html>
