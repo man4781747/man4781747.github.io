@@ -1,0 +1,77 @@
+body {
+  background-color: #ddd;
+}
+
+.click-able {
+  cursor: pointer;
+}
+
+.main-card {
+  width: 16vw;
+  height: 16vw;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 6vw;
+  flex-wrap: wrap;
+  flex-direction: row;
+  position: relative;
+  user-select: none; 
+  transition: all .5s;
+}
+
+.click-able.main-card:hover {
+  background-color: #eee;
+}
+
+.main-card-big {
+  width: 30vw;
+  height: 30vw;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11vw;
+  flex-wrap: wrap;
+  flex-direction: row;
+  position: relative;
+  user-select: none; 
+}
+
+.main-card-icon {
+  height: 8vw;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 50%;
+  user-select: none; 
+}
+
+
+.icon-red {
+  color: var(--bs-red);
+}
+
+.icon-green {
+  color: var(--bs-green);
+}
+
+.icon-yellow {
+  color: var(--bs-yellow);
+}
+
+.icon-blue {
+  color: var(--bs-blue);
+}
+
+.ans-icon {
+  position: absolute;
+  right: 15%;
+  font-size: 6vw;
+  opacity: 0;
+  transition: all 0;
+}
+
+.ans-icon-show {
+  opacity: 1;
+  transition: all 1s;
+}
