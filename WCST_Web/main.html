@@ -1,3 +1,5 @@
+<!-- {% raw %} -->
+<!-- {% verbatim %} -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -6,6 +8,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Document</title>
     <script src="./src/js/db.js"></script>
+    <script src="./src/js/js.cookie.min.js"></script>
     <link href="./src/css/bootstrap5.css" rel="stylesheet">
     <script src="./src/js/vue_2.js"></script>
     <link href="./src/css/main.css" rel="stylesheet">
@@ -13,31 +16,61 @@
 <body>
   <div id="app">
     <div v-if="gameStatus==='START'" style="width: 100vw;height: 100vh;display: flex;align-items: center;justify-content: center;">
-      <button class="btn btn-outline-primary" style="font-size: 5rem;padding: 0 2rem;" @click="gameStatus='ING'">開始</button>
+      <div style="display:flex;">
+        <input style="display: flex;margin-right: 8px;font-size: 3rem;">
+        <button class="btn btn-outline-primary" style="font-size: 3rem;padding: 0 2rem;" @click="gameStatus='INFO'">下一步</button>
+      </div>
+    </div>
+    <div v-if="gameStatus==='INFO'" style="width: 100vw;height: 100vh;display: flex;align-items: center;justify-content: center;">
+      <div style="display: flex;flex-direction: column;align-items: center;">
+        <div class="card" style="height: 30vh;width: 80vw;margin-bottom: 8px;">指導語預定地</div>
+        <button class="btn btn-outline-primary" style="font-size: 3rem;padding: 0 2rem;" @click="gameStatus='ING'">開始測驗</button>
+      </div>
     </div>
     <div v-else-if="gameStatus==='ING'" style="width: 100vw;height: 100vh;display: flex;flex-direction: column;justify-content: space-around;">
       <!-- 選項區 -->
       <div style="display: flex;justify-content: space-evenly;align-items: center;width: 100%;">
-        <div class="card main-card icon-1 click-able" @click="cardClick('red',1,'▲')">
+        <div id="options-1" ref="options-1" class="card main-card icon-1 click-able" @click="cardClick('red',1,'▲')">
           <div class="main-card-icon icon-red">▲</div>
         </div>
-        <div class="card main-card icon-2 click-able" @click="cardClick('green',2,'★')">
+        <div id="options-2" ref="options-2" class="card main-card icon-2 click-able" @click="cardClick('green',2,'★')">
           <div class="main-card-icon icon-green">★</div>
           <div class="main-card-icon icon-green">★</div>
         </div>
-        <div class="card main-card icon-3 click-able" @click="cardClick('yellow',3,'✚')">
+        <div id="options-3" ref="options-3" class="card main-card icon-3 click-able" @click="cardClick('yellow',3,'✚')">
           <div class="main-card-icon icon-yellow">✚</div>
           <div class="main-card-icon icon-yellow">✚</div>
           <div class="main-card-icon icon-yellow">✚</div>
         </div>
-        <div class="card main-card icon-4 click-able" @click="cardClick('blue',4,'●')">
+        <div id="options-4" ref="options-4" class="card main-card icon-4 click-able" @click="cardClick('blue',4,'●')">
           <div class="main-card-icon icon-blue">●</div>
           <div class="main-card-icon icon-blue">●</div>
           <div class="main-card-icon icon-blue">●</div>
           <div class="main-card-icon icon-blue">●</div>
         </div>
       </div>
-      
+      <div style="display: flex;justify-content: space-evenly;align-items: center;width: 100%;">
+        <div class="card main-card click-able chosed-card" :class="lastIndex===0?'last-chosed icon-'+choseSave[0][0]:'icon-'+choseSave[0][0]" v-if="choseSave[0]!==null">
+            <div class="main-card-icon" :class="'icon-'+choseSave[0][2]" v-for="i in [...Array(choseSave[0][0]).keys()]">{{choseSave[0][1]}}</div>
+        </div>
+        <div class="empty-card" v-else></div>
+
+        <div class="card main-card click-able chosed-card" :class="lastIndex===1?'last-chosed icon-'+choseSave[1][0]:'icon-'+choseSave[1][0]" v-if="choseSave[1]!==null">
+          <div class="main-card-icon" :class="'icon-'+choseSave[1][2]" v-for="i in [...Array(choseSave[1][0]).keys()]">{{choseSave[1][1]}}</div>
+        </div>
+        <div class="empty-card" v-else></div>
+
+        <div class="card main-card click-able chosed-card" :class="lastIndex===2?'last-chosed icon-'+choseSave[2][0]:'icon-'+choseSave[2][0]" v-if="choseSave[2]!==null">
+          <div class="main-card-icon" :class="'icon-'+choseSave[2][2]" v-for="i in [...Array(choseSave[2][0]).keys()]">{{choseSave[2][1]}}</div>
+        </div>
+        <div class="empty-card" v-else></div>
+
+        <div class="card main-card click-able chosed-card" :class="lastIndex===3?'last-chosed icon-'+choseSave[3][0]:'icon-'+choseSave[3][0]" v-if="choseSave[3]!==null">
+          <div class="main-card-icon" :class="'icon-'+choseSave[3][2]" v-for="i in [...Array(choseSave[3][0]).keys()]">{{choseSave[3][1]}}</div>
+        </div>
+        <div class="empty-card" v-else></div>
+      </div>
+
       <!-- 題目區 -->
       <div style="
         display: flex;justify-content: space-evenly;align-items: center;width: 100%;
@@ -48,11 +81,39 @@
         <div class="ans-icon" :class="ansResult==='Y'?'ans-icon-show':''">✔</div>
         <div class="ans-icon" :class="ansResult==='N'?'ans-icon-show':''">❌</div>
       </div>
+      <div style="position: fixed;top: 0;left: 0;opacity: .5;width:100vw; pointer-events:none;">
+        <table>
+          <thead>
+            <tr>
+              <th style="padding: 8px;">SortingPrinciple</th>
+              <th style="padding: 8px;">CorrectSeqNumber</th>
+              <th style="padding: 8px;">CardNumber</th>
+              <th style="padding: 8px;">ColumnSortedTo</th>
+              <th style="padding: 8px;">CategoriesMatched</th>
+              <th style="padding: 8px;">PerseverativePrinciple</th>
+              <th style="padding: 8px;">PerseverativeResponse</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-for="resultCohse in finalResultList">
+              <td>{{resultCohse['SortingPrinciple']}}</td>
+              <td>{{resultCohse['CorrectSeqNumber']}}</td>
+              <td>{{resultCohse['CardNumber']}}</td>
+              <td>{{resultCohse['ColumnSortedTo']}}</td>
+              <td>{{resultCohse['CategoriesMatched']}}</td>
+              <td>{{resultCohse['PerseverativePrinciple']}}</td>
+              <td>{{resultCohse['PerseverativeResponse']}}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
     </div>
     <div v-else-if="gameStatus==='END'" style="width: 100vw;height: 100vh;display: flex;flex-direction: column;justify-content: space-around;">
       <h1 style="text-align: center;font-size: 10rem;">測驗結束</h1>
       <div style="display: flex;justify-content: center;">
         <button class="btn btn-outline-primary" style="font-size: 3rem;padding: 0 2rem;margin: 1rem;" @click="downloadResultFile">下載結果</button>
+        <button class="btn btn-outline-primary" style="font-size: 3rem;padding: 0 2rem;margin: 1rem;" @click="downloadResultFile">上傳至Google雲端</button>
         <button class="btn btn-outline-secondary" style="font-size: 3rem;padding: 0 2rem;margin: 1rem;" @click="reStartBtnClick">重新測驗</button>
       </div>
     </div>
@@ -60,3 +121,5 @@
 </body>
 <script src="./src/js/main.js"></script>
 </html>
+<!-- {% endverbatim %} -->
+<!-- {% endraw %} -->

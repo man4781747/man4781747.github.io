@@ -25,12 +25,12 @@ body {
 }
 
 .main-card-big {
-  width: 30vw;
-  height: 30vw;
+  width: 16vw;
+  height: 16vw;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 11vw;
+  font-size: 6vw;
   flex-wrap: wrap;
   flex-direction: row;
   position: relative;
@@ -75,3 +75,15 @@ body {
   opacity: 1;
   transition: all 1s;
 }
+
+.empty-card,.chosed-card {
+  width: 16vw;
+  height: 16vw;
+  border: 2px #000 solid;
+  background-color: #eee;
+}
+
+.last-chosed {
+  background-color: rgba(0 ,0 ,0 ,.1);
+}
+
