@@ -8,6 +8,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Document</title>
     <script src="./src/js/db.js"></script>
+    <script src="./src/js/DateFormat.js"></script>
     <script src="./src/js/js.cookie.min.js"></script>
     <link href="./src/css/bootstrap5.css" rel="stylesheet">
     <script src="./src/js/vue_2.js"></script>
@@ -15,16 +16,78 @@
 </head>
 <body>
   <div id="app">
+    <div v-if="loadEnd===false" id="load-check">WCST 測驗網站</div>
     <div v-if="gameStatus==='START'" style="width: 100vw;height: 100vh;display: flex;align-items: center;justify-content: center;">
-      <div style="display:flex;">
-        <input style="display: flex;margin-right: 8px;font-size: 3rem;">
-        <button class="btn btn-outline-primary" style="font-size: 3rem;padding: 0 2rem;" @click="gameStatus='INFO'">下一步</button>
+      <div class="" style="font-size: 2rem;">
+        <div class="row">
+          <div class="col">
+            <h1 style="text-align: center;font-size: 4rem;margin-bottom: 32px;">WCST 測驗工具</h1>
+          </div>
+        </div>
+        <div class="row">
+          <div class="col-4">
+            <label>受試者ID:</label>
+          </div>
+          <div class="col-8">
+            <input v-model="TesterID" style="width: 100%;"
+              onkeyup="value=value.replace(/[\u4e00-\u9fa5/\s+/]|[\.`~!@#$%^&*() \+ =<>?{}|, \/ ;'\\ [ \] ·~！@#￥%……&*（）—— \+ ={}|《》？：“”【】、；‘’，。、]/g ,'')"
+            >
+          </div>
+        </div>
+        <div class="row">
+          <div class="col-4">
+            <label>資料集:</label>
+          </div>
+          <div class="col-8" style="display: flex;align-items: center;justify-content: space-between;">
+            <button class="btn" :class="dataSet==='64'?'btn-primary':'btn btn-outline-secondary'" @click="dataSet='64'" style="width: calc(50% - 4px);" >64</button>
+            <button class="btn" :class="dataSet==='128'?'btn-primary':'btn btn-outline-secondary'" @click="dataSet='128'" style="width: calc(50% - 4px);">128</button>
+          </div>
+        </div>
+        <div class="row">
+          <div class="col-4">
+            <label>慣用手:</label>
+          </div>
+          <div class="col-8" style="display: flex;align-items: center;justify-content: space-between;">
+            <button class="btn" :class="handSide==='L'?'btn-primary':'btn btn-outline-secondary'" @click="handSide='L'" style="width: calc(50% - 4px);">左手</button>
+            <button class="btn" :class="handSide==='R'?'btn-primary':'btn btn-outline-secondary'" @click="handSide='R'" style="width: calc(50% - 4px);">右手</button>
+          </div>
+        </div>
+        <div class="row">
+          <div class="col-4">
+            <label style="white-space: nowrap;">研究員密碼:</label>
+          </div>
+          <div class="col-8">
+            <input v-model="startPasswordInput" style="width: 100%;">
+          </div>
+        </div>
+        <div class="row">
+          <div class="col" style="text-align: center;margin-top: 30px;">
+            <button v-if="checkStartWindowInputEnd===null" class="btn btn-outline-primary" style="font-size: 3rem;padding: 0 2rem;" @click="testStart()">下一步</button>
+            <button v-else class="btn btn-secondary" style="font-size: 3rem;padding: 0 2rem;" disabled>{{checkStartWindowInputEnd}}</button>
+          </div>
+        </div>
       </div>
     </div>
     <div v-if="gameStatus==='INFO'" style="width: 100vw;height: 100vh;display: flex;align-items: center;justify-content: center;">
       <div style="display: flex;flex-direction: column;align-items: center;">
-        <div class="card" style="height: 30vh;width: 80vw;margin-bottom: 8px;">指導語預定地</div>
-        <button class="btn btn-outline-primary" style="font-size: 3rem;padding: 0 2rem;" @click="gameStatus='ING'">開始測驗</button>
+        <div style="display:flex;margin: 0 2rem;">
+          <div class="card" style="font-size: 2rem;padding: 8px;border: 2px #000 solid;height: 95vh;">
+            待會要請你將最下面的卡片與上面這四張卡片做配對，當你決定與哪一張卡片配對之後，你就按一下那一張分類規則的卡片。<br><br>我沒辦法告訴你應該如何配對這些卡片，但系統會在你每一次分類後告訴你這樣分類是正確的或錯誤的，請你根據系統告訴你的對錯去分類接下來的卡片。這個測驗沒有時間限制。<br><br>準備好了嗎？有任何疑問可以在這個時候提出來，若沒有疑問，請開始。
+          </div> 
+          <div style="position: relative;">
+            <img src="/src/Example.JPG" alt="" style="width: 30vw;border: 2px #000 solid;margin-left: 8px;margin-bottom: 8px;">
+            <img src="/src/Example_2.JPG" alt="" style="width: 30vw;border: 2px #000 solid;margin-left: 8px;margin-bottom: 8px;">
+            <button class="btn btn-outline-primary" 
+              style="font-size: 3rem;padding: 0 2rem;margin-left: 8px;width: calc(100% - 8px);
+              position: absolute;left: 0;bottom: 0;" 
+              @click="gameStatus='ING'"
+            >開始測驗</button>
+          </div>
+          <!-- <div class="">
+            <img src="/src/Example.JPG" alt="" style="width: 30vw;border: 2px #000 solid;margin-left: 8px;">
+          </div> -->
+        </div>
+        <!-- <button class="btn btn-outline-primary" style="font-size: 3rem;padding: 0 2rem;" @click="gameStatus='ING'">開始測驗</button> -->
       </div>
     </div>
     <div v-else-if="gameStatus==='ING'" style="width: 100vw;height: 100vh;display: flex;flex-direction: column;justify-content: space-around;">
@@ -78,10 +141,10 @@
         <div class="card main-card-big" :class="'icon-'+nowQuest[0]">
           <div class="main-card-icon" :class="'icon-'+nowQuest[2]" v-for="i in [...Array(nowQuest[0]).keys()]">{{nowQuest[1]}}</div>
         </div>
-        <div class="ans-icon" :class="ansResult==='Y'?'ans-icon-show':''">✔</div>
-        <div class="ans-icon" :class="ansResult==='N'?'ans-icon-show':''">❌</div>
+        <div class="ans-icon" :class="ansResult==='Y'?'ans-icon-show ans-icon-'+handSide:'ans-icon-'+handSide">正確✔</div>
+        <div class="ans-icon" :class="ansResult==='N'?'ans-icon-show ans-icon-'+handSide:'ans-icon-'+handSide">錯誤❌</div>
       </div>
-      <div style="position: fixed;top: 0;left: 0;opacity: .5;width:100vw; pointer-events:none;">
+      <div style="position: fixed;top: 0;left: 0;opacity: .5;width:100vw; pointer-events:none;" v-if="false">
         <table>
           <thead>
             <tr>
@@ -109,12 +172,33 @@
       </div>
 
     </div>
-    <div v-else-if="gameStatus==='END'" style="width: 100vw;height: 100vh;display: flex;flex-direction: column;justify-content: space-around;">
-      <h1 style="text-align: center;font-size: 10rem;">測驗結束</h1>
-      <div style="display: flex;justify-content: center;">
-        <button class="btn btn-outline-primary" style="font-size: 3rem;padding: 0 2rem;margin: 1rem;" @click="downloadResultFile">下載結果</button>
-        <button class="btn btn-outline-primary" style="font-size: 3rem;padding: 0 2rem;margin: 1rem;" @click="downloadResultFile">上傳至Google雲端</button>
-        <button class="btn btn-outline-secondary" style="font-size: 3rem;padding: 0 2rem;margin: 1rem;" @click="reStartBtnClick">重新測驗</button>
+    <div v-else-if="gameStatus==='END'" style="width: 100vw;height: 100vh;display: flex;flex-direction: column;align-items: center;justify-content: center;">
+      <div class="">
+        <div class="row" style="text-align: center;">
+          <h1 style="font-size: 10rem;">測驗結束</h1>
+          <h3>請通知研究人員進行後續操作</h3>
+        </div>
+        <div class="row">
+          <div class="col" style="display: flex;align-items: center;justify-content: center;font-size: 1.5rem;margin: 8px 0px;">
+            <label style="white-space: nowrap;">研究員密碼:</label>
+            <input style="margin: 0 8px;" v-model="endPasswordInput">
+          </div>
+        </div>
+        <template v-if="endPasswordInput===endPasswordAns">
+          <div style="display: flex;justify-content: center;">
+            <button class="btn btn-outline-primary" style="font-size: 3rem;padding: 0 2rem;margin: 1rem;" @click="downloadResultFile">下載結果</button>
+            <button class="btn btn-outline-primary" style="font-size: 3rem;padding: 0 2rem;margin: 1rem;" @click="uploadResultFileToGoogleDrive" v-if="googleUploading===false">上傳至Google雲端</button>
+            <button class="btn btn-outline-primary" style="font-size: 3rem;padding: 0 2rem;margin: 1rem;" @click="uploadResultFileToGoogleDrive" v-else disabled>上傳Google雲端中</button>
+            
+            <button class="btn btn-outline-secondary" style="font-size: 3rem;padding: 0 2rem;margin: 1rem;" @click="reStartBtnClick">重新測驗</button>
+          </div>
+          <div @click="copyGoogleFileUrl" v-if="googleFilePath.length !== 0">
+            <div style="display: flex;font-size: 1.2rem;margin-left: 1rem;">
+              檔案下載路徑: <div style="margin-left: 8px;">{{googleFilePath}}</div>
+            </div>
+            <input v-model="googleFilePath" id="google-file-url" style="opacity: 0;position:absolute;top:-10000px;z-index:-10;">
+          </div>
+        </template>
       </div>
     </div>
   </div>

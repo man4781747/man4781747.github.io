@@ -2,13 +2,24 @@
 var app = new Vue({
   el: '#app',
   data: {
-    // 當前測驗狀態
-    gameStatus: "ING",
-    // 測驗規則
-    dataSet: "128",
+    loadEnd: false,
 
+    // 當前測驗狀態
+    gameStatus: "START",
+
+    // 測驗開始相關
+    // 測驗規則
+    dataSet: "64",
+    // 慣用手
+    handSide: 'L',
+    // startPassword
+    startPasswordInput: "",
+    startPasswordAns: "test",
     // 受試者ID
     TesterID: "",
+    // 測試開始時間
+    TestStartTime: "",
+
 
     // 卡組內容
     test_db: {},
@@ -44,14 +55,27 @@ var app = new Vue({
     lastIndex: null,
 
 
-
+    // 測驗完畢後密碼輸入值
+    endPasswordInput: "",
+    endPasswordAns: "test",
 
     // 當前執續反應的標準(PTP)規則
     PTP_Value: null,
     // 連續錯誤的明確反應Count數 (連續3次則會更換PTP規則Value)
-    PTP_Value_Count: 0
+    PTP_Value_Count: 0,
+
+    googleFilePath: "",
+    googleUploading: false,
   },
   computed: {
+    checkStartWindowInputEnd () {
+      if (this.TesterID.length === 0) {
+        return "請輸入受試者ID"
+      } else if (this.startPasswordInput !== this.endPasswordAns) {
+        return "請輸入正確的研究員密碼"
+      }
+      return null 
+    },
     nowQuest () {
       try {
         return this.test_db[this.dataSet][this.newQuestIndex]
@@ -162,8 +186,186 @@ var app = new Vue({
       }
       return returnAnsList
     },
+
+    finalCalc_TotalNumber () {
+      return this.finalResultList.length
+    },
+    finalCalc_TotalNumberCorrect () {
+      var returnNum = 0
+      for (var finalResultChose of this.finalResultList) {
+        if (finalResultChose["CorrectSeqNumber"] !== "-") {
+          returnNum += 1
+        }
+      }
+      return returnNum
+    },
+    
+    finalCalc_TotalNumberOfError () {
+      var returnNum = 0
+      for (var finalResultChose of this.finalResultList) {
+        if (finalResultChose["CorrectSeqNumber"] === "-") {
+          returnNum += 1
+        }
+      }
+      return returnNum
+    },
+
+    finalCalc_PreseverativeResponses () {
+      var returnNum = 0
+      for (var finalResultChose of this.finalResultList) {
+        if (finalResultChose["PerseverativeResponse"] === "p") {
+          returnNum += 1
+        }
+      }
+      return returnNum
+    },
+
+    finalCalc_PreseverativeErrors () {
+      var returnNum = 0
+      for (var finalResultChose of this.finalResultList) {
+        if (finalResultChose["PerseverativeResponse"] === "p" & finalResultChose["CorrectSeqNumber"] === "-") {
+          returnNum += 1
+        }
+      }
+      return returnNum
+    },
+
+    finalCalc_NonpreseverativeErrors () {
+      var returnNum = 0
+      for (var finalResultChose of this.finalResultList) {
+        if (finalResultChose["PerseverativeResponse"] !== "p" & finalResultChose["CorrectSeqNumber"] === "-") {
+          returnNum += 1
+        }
+      }
+      return returnNum
+    },
+
+    finalCalc_ConceptualLevelResponses () {
+      var returnNum = 0
+      var countCheckNum = 0
+      for (var finalResultChose of this.finalResultList) {
+        if (finalResultChose["CorrectSeqNumber"] === "-") {
+          if (countCheckNum >= 3) {
+            returnNum += countCheckNum
+            countCheckNum = 0
+          }
+          else {
+            countCheckNum = 0
+          }
+        }
+        else {
+          countCheckNum += 1
+        }
+      }
+      if (countCheckNum >= 3) {
+        returnNum += countCheckNum
+      }
+      return returnNum
+    },
+
+    finalCalc_CategoriesCompleted () {
+      return this.groupCorrectSeqNumber 
+    },
+
+    finalCalc_TrialsToComplete_1st_Category () {
+      if (this.finalCalc_CategoriesCompleted === 0) {
+        return 0
+      }
+      var returnNum = 0
+      for (var finalResultChose of this.finalResultList) {
+        if (finalResultChose["SortingPrinciple"] === "C") {
+          returnNum += 1
+        } else {break}
+      }
+      return returnNum
+    },
+
+    finalCalc_FailureToMaintainSet () {
+      var returnNum = 0
+      var checkIng = false
+      for (var finalResultChose of this.finalResultList) {
+        if (finalResultChose["CorrectSeqNumber"] === 5+'') {
+          checkIng = true
+        }
+        if (checkIng === true & finalResultChose["CorrectSeqNumber"] === 10+'') {
+          checkIng = false
+        }
+        if (checkIng === true & finalResultChose["CorrectSeqNumber"] === "-") {
+          checkIng = false
+          returnNum += 1
+        }
+      }
+      return returnNum
+    },
+
+    finalCalc_ErrorsNumberOfTrails () {
+      if (this.groupCorrectSeqNumber < 3) {
+        return {
+          "AverageDifference": "-",
+          "Table": []
+        }
+      }
+      var returnList = []
+      var nowType = "C"
+      var nowTypeCount = 0
+      var nowTypeErrorCount = 0
+      var CategoryNumber = 1
+      for (var finalResultChose of this.finalResultList) {
+        if (finalResultChose["SortingPrinciple"] === nowType){
+          nowTypeCount += 1
+          if (finalResultChose["CorrectSeqNumber"] === "-") {
+            nowTypeErrorCount += 1
+          }
+        }
+        else {
+          returnList.push(
+            {
+              "CategoryNumber" : CategoryNumber,
+              "NumberOfTrials" : nowTypeCount,
+              "Errors" : nowTypeErrorCount,
+              "PercentErrors": nowTypeErrorCount/nowTypeCount,
+            }
+          )
+          CategoryNumber += 1
+          nowType = finalResultChose["SortingPrinciple"]
+          nowTypeCount = 1
+          nowTypeErrorCount = 0
+          if (finalResultChose["CorrectSeqNumber"] === "-") {
+            nowTypeErrorCount += 1
+          }
+        }
+      }
+      returnList.push(
+        {
+          "CategoryNumber" : CategoryNumber,
+          "NumberOfTrials" : nowTypeCount,
+          "Errors" : nowTypeErrorCount,
+          "PercentErrors": nowTypeErrorCount/nowTypeCount,
+        }
+      )
+      console.log(returnList)
+      returnList[0]["PercentErrorsDifferenceScore"] = "0"
+      var avgDiff = 0
+      for (let i in [...Array(returnList.length-1).keys()]) {
+        var indexNum = parseInt(i)
+        returnList[indexNum+1]["PercentErrorsDifferenceScore"] = returnList[indexNum]["PercentErrors"]-returnList[indexNum+1]["PercentErrors"]
+        avgDiff += returnList[indexNum+1]["PercentErrorsDifferenceScore"]
+      }
+      avgDiff = avgDiff/(returnList.length-1)
+      return {
+        "AverageDifference": avgDiff,
+        "Table": returnList
+      }
+    },
+
     finalResultString () {
-      var ResultString = "SortingPrinciple,CorrectSeqNumber,CardNumber,ColumnSortedTo,CategoriesMatched,PerseverativePrinciple,PerseverativeResponse\r\n"
+      var ResultString = ""
+      ResultString += "WCST MODE,"+this.dataSet+"\r\n"
+      ResultString += "Start Time,"+this.TestStartTime+"\r\n"
+      ResultString += "Client ID,"+this.TesterID+"\r\n\r\n"
+
+      ResultString += "Response Deck\r\n"
+      ResultString += "SortingPrinciple,CorrectSeqNumber,CardNumber,ColumnSortedTo,CategoriesMatched,PerseverativePrinciple,PerseverativeResponse\r\n"
       for (var finalResultChose of this.finalResultList) {
         ResultString += finalResultChose["SortingPrinciple"]+","
         ResultString += finalResultChose["CorrectSeqNumber"]+","
@@ -173,10 +375,45 @@ var app = new Vue({
         ResultString += finalResultChose["PerseverativePrinciple"]+","
         ResultString += finalResultChose["PerseverativeResponse"]+"\r\n"
       }
+      ResultString += "\r\nTest Results\r\n"
+      ResultString += "Trials Administered,"+this.finalCalc_TotalNumber+"\r\n"
+      ResultString += "Total Correct,"+this.finalCalc_TotalNumberCorrect+"\r\n"
+      
+      ResultString += "Total Errors,"+this.finalCalc_TotalNumberOfError+"\r\n"
+      ResultString += "%Errors,"+(this.finalCalc_TotalNumberOfError/this.finalCalc_TotalNumber*100).toFixed(0)+"%\r\n"
+      
+      ResultString += "Perseverative Responses,"+this.finalCalc_PreseverativeResponses+"\r\n"
+      ResultString += "%Perseverative Responses,"+(this.finalCalc_PreseverativeResponses/this.finalCalc_TotalNumber*100).toFixed(0)+"%\r\n"
+      
+      ResultString += "Perseverative Errors,"+this.finalCalc_PreseverativeErrors+"\r\n"
+      ResultString += "%Perseverative Errors,"+(this.finalCalc_PreseverativeErrors/this.finalCalc_TotalNumber*100).toFixed(0)+"%\r\n"
+      
+      ResultString += "Nonperseverativ Errors,"+this.finalCalc_NonpreseverativeErrors+"\r\n"
+      ResultString += "%Nonperseverative Errors,"+(this.finalCalc_NonpreseverativeErrors/this.finalCalc_TotalNumber*100).toFixed(0)+"%\r\n"
+      
+      ResultString += "Conceptual Level Responses,"+this.finalCalc_ConceptualLevelResponses+"\r\n"
+      ResultString += "%Conceptual Level Responses,"+(this.finalCalc_ConceptualLevelResponses/this.finalCalc_TotalNumber*100).toFixed(0)+"%\r\n"
+      
+      ResultString += "Categories Completed,"+this.finalCalc_CategoriesCompleted+"\r\n"
+      ResultString += "Trials to Complete 1st Category,"+this.finalCalc_TrialsToComplete_1st_Category+"\r\n"
+      ResultString += "Failure to Maintain Set,"+this.finalCalc_FailureToMaintainSet+"\r\n"
+      ResultString += "Learning to Learn,"+(this.finalCalc_ErrorsNumberOfTrails["AverageDifference"]*100).toFixed(2)+"\r\n"
+      
+      ResultString += "\r\nLearning to Learn Score Worksheet\r\nCategory number,Number of trials,Errors,Percent errors,Percent errors difference score\r\n"
+      for (let dataChose of this.finalCalc_ErrorsNumberOfTrails["Table"]) {
+        ResultString += dataChose["CategoryNumber"]+","+dataChose["NumberOfTrials"]+","+dataChose["Errors"]+","+(dataChose["PercentErrors"]*100).toFixed(2)+","+(dataChose["PercentErrorsDifferenceScore"]*100).toFixed(2)+"\r\n"
+      }
+      ResultString += "\r\nAverage difference,"+(this.finalCalc_ErrorsNumberOfTrails["AverageDifference"]*100).toFixed(2)+"\r\n"
+
       return ResultString
     },
   },
   methods: {
+    testStart () {
+      var nowDatetime = new Date()
+      this.TestStartTime = nowDatetime.format('yyyy-MM-dd_hh-mm-ss')
+      this.gameStatus = 'INFO'
+    },
     cardClick (S_color,I_number,S_shape) {
       var I_number = I_number
       var nowQuestSave = JSON.parse(JSON.stringify(this.nowQuest))
@@ -313,6 +550,8 @@ var app = new Vue({
       this.animationStatus = 'DONE'
       this.resultString = "C"
       this.gameStatus = "START"
+      this.endPasswordInput = ""
+      this.googleFilePath = ""
     },
     downloadResultFile () {
       var element = document.createElement('a');
@@ -323,6 +562,29 @@ var app = new Vue({
       document.body.appendChild(element);
       element.click();
       document.body.removeChild(element);
+    },
+    uploadResultFileToGoogleDrive () {
+      if (this.googleUploading === false) {
+        this.googleUploading = true
+        var This = this
+        var urlString = encodeURIComponent(this.finalResultString)
+        fetch("https://script.google.com/macros/s/AKfycbxeotPvLMmntWGN6g_2J-ezOeSt3GFYYaQMciV-QE295QHWxKQiC-aIUKY2hZWHiQ-u4w/exec?fileName="+this.TestStartTime+"_"+this.TesterID+".csv"+"&contestString="+urlString)
+        .then(function(response) {
+          return response.json();
+        })
+        .then(function(myJson) {
+          if (myJson["result"] === "success") {
+            This.googleFilePath = myJson["newUrl"]
+          }
+          else {
+            alert("上傳至Google雲端錯誤，錯誤資訊:\r\n"+myJson["message"]+"\r\n如有問題請通知管理員")
+          }
+          This.googleUploading = false
+        });
+      }
+      else {
+
+      }
     },
     reStartBtnClick () {
       var isRestart = confirm("確認要重新測驗嗎? 資料將會全部清空喔!");
@@ -357,9 +619,11 @@ var app = new Vue({
       }
       // 若跑到這行，代表兩個符合規則之明確錯誤反應中間皆符合三明治規則，全部標記為p
       if (newRule) {
-        inputList[parseInt(startIndex)]["PerseverativeResponse"] = '- [unambiguous error]'
+        // inputList[parseInt(startIndex)]["PerseverativeResponse"] = '- [unambiguous error]'
+        inputList[parseInt(startIndex)]["PerseverativeResponse"] = '-'
         for (var nowIndex=parseInt(startIndex)+1; nowIndex<parseInt(endIndex);nowIndex++) {
-          inputList[nowIndex]["PerseverativeResponse"] = 'p [unambiguous error]'
+          // inputList[nowIndex]["PerseverativeResponse"] = 'p [unambiguous error]'
+          inputList[nowIndex]["PerseverativeResponse"] = 'p'
         }
       }
       else {
@@ -372,7 +636,6 @@ var app = new Vue({
       return null
     },
 
-
     // 紀錄功能相關
     updateSaveCookies () {
       ResultString = this.TesterID+","+this.dataSet+","
@@ -380,6 +643,7 @@ var app = new Vue({
       for (var nowResultChose of returnAnsList) {
         ResultString += nowResultChose["ColumnSortedTo"]
       }
+      ResultString += ","+this.handSide+","+this.TestStartTime
       Cookies.set("WCSTSaveData", ResultString)
     },
 
@@ -392,10 +656,13 @@ var app = new Vue({
         if (S_saveData.length !== 0) {
           if(confirm('發現有過去的紀錄檔，需要重新讀取嗎?\r\n若取消讀取，可能導致過往紀錄消失!\r\n若要讀取請點選"確定"')) {
             this.gameStatus = "ING"
-            this.dataSet = S_saveData.split(",")[1]
-            this.TesterID = S_saveData.split(",")[0]
-            console.log(S_saveData)
-            this.loadSaveData_CardOrder(S_saveData.split(",")[2])
+            this.$nextTick(() => {
+              this.dataSet = S_saveData.split(",")[1]
+              this.TesterID = S_saveData.split(",")[0]
+              this.loadSaveData_CardOrder(S_saveData.split(",")[2])
+              this.handSide = S_saveData.split(",")[3]
+              this.TestStartTime = S_saveData.split(",")[4]
+            })
           }
         } 
       })
@@ -407,6 +674,11 @@ var app = new Vue({
         this.$refs['options-'+S_order].click()
       }
       this.sleepTime = 1000
+    },
+    copyGoogleFileUrl(){
+      document.getElementById("google-file-url").select()
+      document.execCommand("copy")
+      alert("複製文字成功");
     }
   },
   mounted () {
@@ -417,5 +689,6 @@ var app = new Vue({
     {
       return '您尚未將編輯過的表單資料送出，請問您確定要離開網頁嗎？';
     }
+    this.loadEnd = true
   },
 })
