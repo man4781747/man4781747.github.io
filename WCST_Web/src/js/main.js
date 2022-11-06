@@ -552,6 +552,7 @@ var app = new Vue({
       this.gameStatus = "START"
       this.endPasswordInput = ""
       this.googleFilePath = ""
+      this.choseSave = [null,null,null,null,]
     },
     downloadResultFile () {
       var element = document.createElement('a');
