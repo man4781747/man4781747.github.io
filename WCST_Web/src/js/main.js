@@ -568,7 +568,7 @@ var app = new Vue({
         this.googleUploading = true
         var This = this
         var urlString = encodeURIComponent(this.finalResultString)
-        fetch("https://script.google.com/macros/s/AKfycbxeotPvLMmntWGN6g_2J-ezOeSt3GFYYaQMciV-QE295QHWxKQiC-aIUKY2hZWHiQ-u4w/exec?fileName="+this.TestStartTime+"_"+this.TesterID+".csv"+"&contestString="+urlString)
+        fetch("https://script.google.com/macros/s/AKfycbwIZkqS8soX9ic1u3QMMsTwyKvOcKpdTaVXzyMeLMev_llHrA6_djUp4M6aVQjjZFJwPw/exec?fileName="+this.TestStartTime+"_"+this.TesterID+".csv"+"&contestString="+urlString)
         .then(function(response) {
           return response.json();
         })
