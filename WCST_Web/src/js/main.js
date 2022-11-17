@@ -90,121 +90,195 @@ var app = new Vue({
       }
     },
     finalResultList () {
-      var isFirstUnambiguousError = true
-      var isFirstUnambiguousError_special = true
-      var PTP_Value = null
-      var lastPTP_cardIndex = null
-
-      var lastOther_PTP_cardIndex = null
-      var other_PTP_Value = null
-      var other_PTP_Value_Count = 0
-
       var returnAnsList =  JSON.parse(JSON.stringify(this.reslutList))
+
+      
+      var NowWrongRule = "-" // 當前的錯誤規則
+      var PTPStack = { // 裡面紀錄的是PTP規則切換的資料
+        "rule": "-",  //  當前PTP判斷依據規則
+        "stack": [], //  如果PTP切換，裡面的錯誤規則都要改 (除了第一個)
+        "count": 0
+      }
       for (var resultChose of returnAnsList) {
+        // AreUnambiguous: 是否明確反應
+        // CardNumber: 卡片ID (index + 1)
+        // CategoriesMatched: 此卡片歸類項目
+        // ColumnSortedTo:    作答時選擇的位置
+        // CorrectSeqNumber: 連續正確count數
+        // PerseverativePrinciple : 上一組正確答案
+        // PerseverativeResponse  : 是否記p
+        // SortingPrinciple:  當前正確規則
+
+        // NowWrongRule (new) 當前錯誤規則
+
         console.log("當前卡牌index: "+(parseInt(resultChose["CardNumber"])-1))
-        resultChose["PerseverativeResponse"] = "-"
-        // 若為回答正確
-        if (resultChose["CorrectSeqNumber"] !== "-") {
-          other_PTP_Value_Count = 0
-          // 若為正確的明確反應，則重設PTP規則
-          if (resultChose["AreUnambiguous"] === true) {
-            lastPTP_cardIndex = resultChose["CardNumber"]
-            other_PTP_Value = null
-            lastOther_PTP_cardIndex = resultChose["CardNumber"]
-          }
-          // 若為正確的非明確反應，則有可能在後續判斷中定義為p
-          else {}
-          // 連10題正確，錯誤規則重設
-          if (resultChose["CorrectSeqNumber"] === "10") {
-            PTP_Value = null
-            lastPTP_cardIndex = null
-            lastOther_PTP_cardIndex = null
-            other_PTP_Value = null
-          }
-          continue
-        }
-        // 若為回答錯誤
-        else {
-          // 若為明確反應
-          console.log(resultChose["AreUnambiguous"])
-          if (resultChose["AreUnambiguous"] === true) {
-            console.log("此次明確錯誤反應為: "+resultChose["CategoriesMatched"])
-            // 若為最初錯誤反應(unambiguous error)
-            if (PTP_Value === null) {
-              // unambiguous error
-              // 定義當前PTP類型
-              // 並記錄此刻卡片位置，以便後續判斷三明治規則用
-              if (isFirstUnambiguousError === false & isFirstUnambiguousError_special === true) {
-                console.log("第一個與起始PTP規則相同的明確錯誤反應，要當麵包頭了")
-                isFirstUnambiguousError_special = false
-                resultChose["PerseverativeResponse"] = "p"
-                PTP_Value = resultChose["CategoriesMatched"]
-              }
-              else if (isFirstUnambiguousError === true & resultChose['PerseverativePrinciple']==="-") {
-                console.log("第一個與起始PTP規則，不能當麵包頭")
-                resultChose["PerseverativeResponse"] = "[unambiguous error]"
-                isFirstUnambiguousError = false
+        // console.log("當前Categories_Matched: "+Categories_Matched)
+        resultChose["NowWrongRule"] = NowWrongRule
+        if (resultChose["CorrectSeqNumber"] === "-") {
+          // 如果回答錯誤
+          if (resultChose["AreUnambiguous"] === true) { // 如果回答錯誤，並且為明確反應
+            // 如果回答錯誤且為明確錯誤
+            if (NowWrongRule === "-") {
+              // 如果回答錯誤且為明確錯誤 而且 當前的錯誤規則(NowWrongRule)==="-"
+              // 代表這是整份第一個遇到的明確錯誤
+              console.log("整份遇到的第一個明確錯誤")
+              console.log("當前錯誤規則調整為: "+resultChose["CategoriesMatched"])
+              // 首先 當前卡片的錯誤規則還不能動，要跟著上一個錯誤規則，不能當下個規則的麵包
+              // resultChose["NowWrongRule"] = NowWrongRule
+              resultChose["NowWrongRule"] = "[unambiguous error]"
+              NowWrongRule = resultChose["CategoriesMatched"]
+            }
+            else if (NowWrongRule === resultChose["CategoriesMatched"]) {
+              // 如果回答錯誤且為明確錯誤 而且與 當前的錯誤規則(NowWrongRule)相同
+              console.log("回答錯誤且為明確錯誤 而且與 當前的錯誤規則(NowWrongRule)相同")
+              console.log("重設記錄檔")
+              PTPStack["rule"] = "-"
+              PTPStack["stack"] = []
+              PTPStack["count"] = 0
+            } else if (NowWrongRule !== resultChose["CategoriesMatched"]) {
+              // 如果回答錯誤且為明確錯誤 而且與 當前的錯誤規則(NowWrongRule)不不不不不不相同
+              if (PTPStack["rule"] === resultChose["CategoriesMatched"]) {
+                // 如果明確不同的錯誤與記錄檔相同
+                console.log("明確不同的錯誤與記錄檔相同")
+                console.log("計數+1")
+                PTPStack["count"] += 1
+                PTPStack["stack"].push(resultChose)
               }
               else {
-                console.log("切換規則後第一個錯誤")
-                resultChose["PerseverativeResponse"] = "p"
-                PTP_Value = resultChose["CategoriesMatched"]
-                console.log("PTP更新為 : "+PTP_Value)
+                // 如果明確不同的錯誤與記錄檔不相同
+                console.log("明確不同的錯誤與記錄檔不相同")
+                console.log("錯誤與記錄檔規則改為: "+resultChose["CategoriesMatched"]+"")
+                PTPStack["rule"] = resultChose["CategoriesMatched"]+""
+                PTPStack["count"] = 1
+                PTPStack["stack"] = []
               }
-              lastPTP_cardIndex = resultChose["CardNumber"] - 1
-            }
-            // 此錯誤為明確反應，並且錯誤規則與當前錯誤規則相同
-            else if (PTP_Value === resultChose["CategoriesMatched"]) {
-              console.log("此錯誤為明確反應，並且錯誤規則與當前錯誤規則相同")
-              console.log(PTP_Value +" vs " +resultChose["CategoriesMatched"])
-              // 標記此項目為p
-              // 並且檢查是否有三明治規則
-              // 並且清除另一錯誤明確反應紀錄
-              other_PTP_Value_Count = 1
-              other_PTP_Value = null
-              lastOther_PTP_cardIndex = null
-              resultChose["PerseverativeResponse"] = 'p'
-              this.checkIfSandwich(returnAnsList, lastPTP_cardIndex, resultChose["CardNumber"], PTP_Value, false)
-              // 判定完三明治規則後，更新當前卡片位置，以便後續判斷三明治規則用
-              lastPTP_cardIndex = resultChose["CardNumber"] - 1
-            }
-            // 若此次錯誤為明確反應，並且錯誤規則與當前錯誤規則不同，"但是"與上一個另一錯誤的明確反應錯誤規則相同
-            else if (other_PTP_Value === resultChose["CategoriesMatched"]) {
-              console.log("此次錯誤為明確反應，並且錯誤規則與當前錯誤規則不同，但是與上一個另一錯誤的明確反應錯誤規則相同")
-              console.log(other_PTP_Value +" vs " +resultChose["CategoriesMatched"])
-              // 連續錯誤計數+1
-              other_PTP_Value_Count += 1
-              console.log('連續另一錯誤明確反應: '+other_PTP_Value_Count)
-              // 若連續3次另一錯誤明確反應皆為同種錯誤
-              if (other_PTP_Value_Count >= 3) {
-                console.log('連續3次另一錯誤明確反應皆為同種錯誤')
-                // 則連續錯誤計數歸0
-                // 並且錯誤類型改變
-                other_PTP_Value_Count = 0
-                other_PTP_Value = null
-                PTP_Value = resultChose["CategoriesMatched"]
-                // 回頭檢查三明治的範圍內是否有不明確反應同屬此類
-                this.checkIfSandwich(returnAnsList, lastOther_PTP_cardIndex, resultChose["CardNumber"], PTP_Value, true)
-                // 判定完三明治規則後，更新當前卡片位置，以便後續判斷三明治規則用
-                lastPTP_cardIndex = resultChose["CardNumber"] - 1
+              if (PTPStack["count"] >= 3) {
+                // 連續不同明確錯誤記數 >= 3
+                // 改變當前錯誤規則
+                console.log("連續不同明確錯誤記數 >= 3")
+                NowWrongRule = PTPStack["rule"]+""
+                console.log("改變當前錯誤規則變成: "+NowWrongRule)
+                // 改變stack內所有的錯誤規則("NowWrongRule")
+                console.log("改變stack內所有的錯誤規則('NowWrongRule')")
+                var changeSwitch = true // 直到碰到第一個明確錯誤才改規則
+                for (let index in PTPStack["stack"]) {
+                  if (PTPStack["stack"][index]["AreUnambiguous"] === false & changeSwitch === true) {
+                    console.log("還沒遇到紀錄組內的第一個明確錯誤，且此項目為不明確錯誤，不改錯誤判斷規則")
+                    continue
+                  } else if (PTPStack["stack"][index]["AreUnambiguous"] === true & changeSwitch === true) {
+                    console.log("遇到紀錄組內的第一個明確錯誤，開始改錯誤判斷規則")
+                    changeSwitch = false
+                    PTPStack["stack"][index]["NowWrongRule"] = NowWrongRule
+                    continue
+                  }
+                  // if (index === 0) {
+                  //   continue
+                  // }
+                  console.log("index: "+(PTPStack["stack"][index]["CardNumber"]-1))
+                  PTPStack["stack"][index]["NowWrongRule"] = NowWrongRule
+                }
+                // 清空stack
+                PTPStack["rule"] = "-"
+                PTPStack["stack"] = []
+                PTPStack["count"] = 0
               }
             }
-            // 若此次錯誤為明確反應，並且錯誤規則為新的類型
-            else if (other_PTP_Value !== resultChose["CategoriesMatched"]) {
-              console.log("此此次錯誤為明確反應，並且錯誤規則為新的類型")
-              // 則temp連續錯誤計數歸0
-              // 並且temp錯誤類型改變
-              // lastOther_PTP_cardIndex 更新為此次錯誤
-              other_PTP_Value_Count = 1
-              other_PTP_Value = resultChose["CategoriesMatched"]
-              lastOther_PTP_cardIndex = resultChose["CardNumber"] - 1
+          }
+          else { // 如果回答錯誤，並且為不明確反應
+            if (resultChose["CategoriesMatched"].indexOf(PTPStack["rule"]) !== -1) { //如果這個錯誤的不明確反應包含了紀錄檔的錯誤規則
+              console.log("這個錯誤的不明確反應包含了紀錄檔的錯誤規則")
+              console.log("記錄檔不重設，count不+1，stack加入此卡片")
+              PTPStack["stack"].push(resultChose)
+            } else {
+              console.log("這個錯誤的不明確反應不包含了紀錄檔的錯誤規則")
+              console.log("記錄檔重設")
+              PTPStack["rule"] = "-"
+              PTPStack["stack"] = []
+              PTPStack["count"] = 0
             }
-            else {
-              console.log(resultChose["未知未知"])
+          }
+        } else {
+          // 如果回答正確
+          if (resultChose["AreUnambiguous"] === true) { // 如果回答正確，並且為明確反應
+            console.log("回答正確，並且為明確反應")
+            console.log("記錄檔重設")
+            PTPStack["rule"] = "-"
+            PTPStack["stack"] = []
+            PTPStack["count"] = 0
+          } else {// 如果回答正確，並且為明確反應
+            console.log("回答正確，並且為不明確反應")
+            // 要判斷紀錄檔的規則是否包含在此卡中
+            if (resultChose["CategoriesMatched"].indexOf(PTPStack["rule"]) !== -1) {//如果這個正確的不明確反應包含了紀錄檔的錯誤規則
+              console.log("這個正確的不明確反應包含了紀錄檔的錯誤規則")
+              console.log("記錄檔不重設，count不+1，stack加入此卡片")
+              PTPStack["stack"].push(resultChose)
+            } else {
+              console.log("這個正確的不明確反應不包含了紀錄檔的錯誤規則")
+              console.log("記錄檔重設")
+              PTPStack["rule"] = "-"
+              PTPStack["stack"] = []
+              PTPStack["count"] = 0
             }
+          }
+
+          if (resultChose["CorrectSeqNumber"] === "10") {
+            // 回答正確，而且連續答對10題
+            console.log("回答正確，而且連續答對10題")
+            console.log("當前錯誤規則調整為: "+resultChose["SortingPrinciple"])
+            NowWrongRule = resultChose["SortingPrinciple"]
+            console.log("這個正確的不明確反應不包含了紀錄檔的錯誤規則")
+            console.log("記錄檔重設")
+            PTPStack["rule"] = "-"
+            PTPStack["stack"] = []
+            PTPStack["count"] = 0
           }
         }
       }
+      console.log("錯誤規則配對已設定完成，開始從新掃描所有項目")
+      console.log("為三明治判斷分組")
+      var L_pGroup = []
+      var L_pGroupTemp = []
+      for (var resultChose of returnAnsList) {
+
+        if (resultChose["NowWrongRule"] === resultChose["CategoriesMatched"]) {
+          resultChose["PerseverativeResponse"] = "p"
+          L_pGroupTemp.push(resultChose)
+          if (L_pGroupTemp.length != 1) {
+            L_pGroup.push(L_pGroupTemp)
+            L_pGroupTemp = [resultChose]
+          }
+        }
+        else {
+          if (L_pGroupTemp.length != 0){
+            L_pGroupTemp.push(resultChose)
+          }
+        }
+      }
+      console.log("分組完成")
+      for (let groupChose of L_pGroup) {
+        var allSaveCheck = true
+        for (let itemChose of groupChose) {
+          if (itemChose["CategoriesMatched"].indexOf(groupChose[0]["CategoriesMatched"]) === -1) {
+            allSaveCheck = false
+            break
+          }
+        }
+        if (allSaveCheck) {
+          for (let itemChose of groupChose) {
+            itemChose["PerseverativeResponse"] = "p"
+          }
+        }
+      }
+      console.log("三明治判斷完成")
+      console.log("為 PerseverativeResponse 沒值的項目填入 '-'")
+      for (var resultChose of returnAnsList) {
+
+        if (resultChose["PerseverativeResponse"] == undefined) {
+          resultChose["PerseverativeResponse"] = "-"
+        }
+
+      }
+
       return returnAnsList
     },
 
@@ -364,7 +438,6 @@ var app = new Vue({
           "PercentErrors": nowTypeErrorCount/nowTypeCount,
         }
       )
-      console.log(returnList)
       returnList[0]["PercentErrorsDifferenceScore"] = "0"
       while (returnList.length > this.groupCorrectSeqNumber) {
         returnList.pop()
@@ -392,7 +465,7 @@ var app = new Vue({
       ResultString += "Client ID,"+this.TesterID+"\r\n\r\n"
 
       ResultString += "Response Deck\r\n"
-      ResultString += "SortingPrinciple,CorrectSeqNumber,CardNumber,ColumnSortedTo,CategoriesMatched,PerseverativePrinciple,PerseverativeResponse\r\n"
+      ResultString += "SortingPrinciple,CorrectSeqNumber,CardNumber,ColumnSortedTo,CategoriesMatched,PerseverativePrinciple,PTPRule,PerseverativeResponse\r\n"
       for (var finalResultChose of this.finalResultList) {
         ResultString += finalResultChose["SortingPrinciple"]+","
         ResultString += finalResultChose["CorrectSeqNumber"]+","
@@ -400,6 +473,7 @@ var app = new Vue({
         ResultString += finalResultChose["ColumnSortedTo"]+","
         ResultString += finalResultChose["CategoriesMatched"]+","
         ResultString += finalResultChose["PerseverativePrinciple"]+","
+        ResultString += finalResultChose["NowWrongRule"]+","
         ResultString += finalResultChose["PerseverativeResponse"]+"\r\n"
       }
       ResultString += "\r\nTest Results\r\n"
@@ -605,7 +679,7 @@ var app = new Vue({
     downloadResultFile () {
       var element = document.createElement('a');
       element.setAttribute('href', 'data:text/plain;charset=utf-8,%EF%BB%BF' + encodeURIComponent(this.finalResultString));
-      element.setAttribute('download', 'Result.csv');
+      element.setAttribute('download', this.TestStartTime+"_"+this.TesterID+".csv");
     
       element.style.display = 'none';
       document.body.appendChild(element);
@@ -657,47 +731,6 @@ var app = new Vue({
       }
       return true
     },
-    // 檢查兩個連續符合明確錯誤規則的紀錄中間是否符合三明治規則
-    checkIfSandwich (inputList, startIndex, endIndex, rule, newRule) {
-      console.log("檢查三明治:"+startIndex+"~"+(parseInt(endIndex)-1))
-      console.log("使用規則:"+rule)
-      console.log("新規則切換:"+newRule)
-      console.log("================")
-      if (inputList[parseInt(startIndex)]["CategoriesMatched"].length != 1) {
-        // 第一個項目不是明確反應，直接判定非三明治規則，跳出
-        console.log("不符合三明治規則")
-        console.log("================")
-        return null
-      }
-      for (var nowIndex=parseInt(startIndex); nowIndex<parseInt(endIndex);nowIndex++) {
-        // 若中間有任何不包含rule的錯誤規則，則直接判定非三明治規則，跳出
-        console.log(inputList[nowIndex]["CategoriesMatched"])
-        if (inputList[nowIndex]["CategoriesMatched"].indexOf(rule) === -1) {
-          console.log("不符合三明治規則")
-          console.log("================")
-          return null
-        }
-      }
-      console.log("================")
-      // 若跑到這行，代表兩個符合規則之明確錯誤反應中間皆符合三明治規則，全部標記為p
-      if (newRule) {
-        // inputList[parseInt(startIndex)]["PerseverativeResponse"] = '- [unambiguous error]'
-        inputList[parseInt(startIndex)]["PerseverativeResponse"] = '-'
-        for (var nowIndex=parseInt(startIndex)+1; nowIndex<parseInt(endIndex);nowIndex++) {
-          // inputList[nowIndex]["PerseverativeResponse"] = 'p [unambiguous error]'
-          inputList[nowIndex]["PerseverativeResponse"] = 'p'
-        }
-      }
-      else {
-        for (var nowIndex=parseInt(startIndex); nowIndex<parseInt(endIndex);nowIndex++) {
-          if (inputList[nowIndex]["PerseverativeResponse"] !== "[unambiguous error]"){
-            inputList[nowIndex]["PerseverativeResponse"] = 'p'
-          }
-        }
-      }
-      return null
-    },
-
     // 紀錄功能相關
     updateSaveCookies () {
       ResultString = this.TesterID+","+this.dataSet+","
