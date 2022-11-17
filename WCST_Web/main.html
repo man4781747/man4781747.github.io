@@ -30,6 +30,14 @@
             <h1 style="text-align: center;font-size: 4rem;margin-bottom: 32px;">WCST 測驗工具</h1>
           </div>
         </div>
+        <div class="row" style="margin-bottom:3px;">
+          <div class="col-4">
+            <label style="white-space: nowrap;">受試者姓名:</label>
+          </div>
+          <div class="col-8">
+            <input v-model="TesterName" style="width: 100%;">
+          </div>
+        </div>
         <div class="row">
           <div class="col-4">
             <label>受試者ID:</label>
@@ -73,13 +81,15 @@
           </div>
         </div>
       </div>
-      <div style="position: fixed;bottom:8px;right:8px;">V1.0.7</div>
+      <div style="position: fixed;bottom:8px;right:8px;">V1.0.8</div>
     </div>
     <div v-if="gameStatus==='INFO'" style="width: 100vw;height: 100vh;display: flex;align-items: center;justify-content: center;">
       <div style="display: flex;flex-direction: column;align-items: center;">
         <div style="display:flex;margin: 0 2rem;">
           <div class="card" style="font-size: 2rem;padding: 8px;border: 2px #000 solid;height: 95vh;">
-            待會要請你將最下面的卡片與上面這四張卡片做配對，當你決定與哪一張卡片配對之後，你就按一下那一張分類規則的卡片。<br><br>我沒辦法告訴你應該如何配對這些卡片，但系統會在你每一次分類後告訴你這樣分類是正確的或錯誤的，請你根據系統告訴你的對錯去分類接下來的卡片。這個測驗沒有時間限制。<br><br>準備好了嗎？有任何疑問可以在這個時候提出來，若沒有疑問，請開始。
+            請你將畫面上最下方的反應卡片與四張刺激選項卡(最上方)做配對，當你決定要與哪一張刺激選項卡片配對時，你就按一下該張卡片即完成作答。<br>
+            我們無法告知你太多這個遊戲如何進行配對，請你依據每次作答後給你的回饋來決定下一次的配對，這個測驗沒有時間限制。<br>
+            準備好了嗎？有任何疑問可以跟施測者提出，若沒有疑問，請開始。
           </div> 
           <div style="position: relative;">
             <img src="https://raw.githubusercontent.com/man4781747/man4781747.github.io/main/WCST_Web/src/Example.JPG" alt="" style="width: 30vw;border: 2px #000 solid;margin-left: 8px;margin-bottom: 8px;">

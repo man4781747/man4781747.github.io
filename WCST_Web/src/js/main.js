@@ -14,9 +14,11 @@ var app = new Vue({
     handSide: 'L',
     // startPassword
     startPasswordInput: "",
-    startPasswordAns: "test",
+    startPasswordAns: "qaz",
     // 受試者ID
     TesterID: "",
+    // 受試者姓名
+    TesterName: "",
     // 測試開始時間
     TestStartTime: "",
 
@@ -57,7 +59,7 @@ var app = new Vue({
 
     // 測驗完畢後密碼輸入值
     endPasswordInput: "",
-    endPasswordAns: "test",
+    endPasswordAns: "qaz",
 
     // 當前執續反應的標準(PTP)規則
     PTP_Value: null,
@@ -66,10 +68,13 @@ var app = new Vue({
 
     googleFilePath: "",
     googleUploading: false,
+    fileSaveDone: false,
   },
   computed: {
     checkStartWindowInputEnd () {
-      if (this.TesterID.length === 0) {
+      if (this.TesterName.length === 0) {
+        return "請輸入受試者姓名"
+      } else if (this.TesterID.length === 0) {
         return "請輸入受試者ID"
       } else if (this.startPasswordInput !== this.endPasswordAns) {
         return "請輸入正確的研究員密碼"
@@ -86,7 +91,7 @@ var app = new Vue({
     },
     finalResultList () {
       var isFirstUnambiguousError = true
-
+      var isFirstUnambiguousError_special = true
       var PTP_Value = null
       var lastPTP_cardIndex = null
 
@@ -96,52 +101,62 @@ var app = new Vue({
 
       var returnAnsList =  JSON.parse(JSON.stringify(this.reslutList))
       for (var resultChose of returnAnsList) {
+        console.log("當前卡牌index: "+(parseInt(resultChose["CardNumber"])-1))
         resultChose["PerseverativeResponse"] = "-"
-
         // 若為回答正確
         if (resultChose["CorrectSeqNumber"] !== "-") {
+          other_PTP_Value_Count = 0
           // 若為正確的明確反應，則重設PTP規則
           if (resultChose["AreUnambiguous"] === true) {
-            var lastPTP_cardIndex = resultChose["CardNumber"]
-            var other_PTP_Value_Count = 0
-            var other_PTP_Value = null
-            var lastPTP_cardIndex = resultChose["CardNumber"]
+            lastPTP_cardIndex = resultChose["CardNumber"]
+            other_PTP_Value = null
+            lastOther_PTP_cardIndex = resultChose["CardNumber"]
           }
           // 若為正確的非明確反應，則有可能在後續判斷中定義為p
           else {}
           // 連10題正確，錯誤規則重設
           if (resultChose["CorrectSeqNumber"] === "10") {
-            var PTP_Value = null
-            var lastPTP_cardIndex = null
-            var lastOther_PTP_cardIndex = null
-            var other_PTP_Value = null
-            var other_PTP_Value_Count = 0
+            PTP_Value = null
+            lastPTP_cardIndex = null
+            lastOther_PTP_cardIndex = null
+            other_PTP_Value = null
           }
-
-
           continue
         }
         // 若為回答錯誤
         else {
           // 若為明確反應
+          console.log(resultChose["AreUnambiguous"])
           if (resultChose["AreUnambiguous"] === true) {
+            console.log("此次明確錯誤反應為: "+resultChose["CategoriesMatched"])
             // 若為最初錯誤反應(unambiguous error)
             if (PTP_Value === null) {
               // unambiguous error
               // 定義當前PTP類型
               // 並記錄此刻卡片位置，以便後續判斷三明治規則用
-              if (isFirstUnambiguousError & resultChose['PerseverativePrinciple']==="-") {
+              if (isFirstUnambiguousError === false & isFirstUnambiguousError_special === true) {
+                console.log("第一個與起始PTP規則相同的明確錯誤反應，要當麵包頭了")
+                isFirstUnambiguousError_special = false
+                resultChose["PerseverativeResponse"] = "p"
+                PTP_Value = resultChose["CategoriesMatched"]
+              }
+              else if (isFirstUnambiguousError === true & resultChose['PerseverativePrinciple']==="-") {
+                console.log("第一個與起始PTP規則，不能當麵包頭")
                 resultChose["PerseverativeResponse"] = "[unambiguous error]"
                 isFirstUnambiguousError = false
               }
               else {
+                console.log("切換規則後第一個錯誤")
                 resultChose["PerseverativeResponse"] = "p"
+                PTP_Value = resultChose["CategoriesMatched"]
+                console.log("PTP更新為 : "+PTP_Value)
               }
-              PTP_Value = resultChose["CategoriesMatched"]
               lastPTP_cardIndex = resultChose["CardNumber"] - 1
             }
             // 此錯誤為明確反應，並且錯誤規則與當前錯誤規則相同
             else if (PTP_Value === resultChose["CategoriesMatched"]) {
+              console.log("此錯誤為明確反應，並且錯誤規則與當前錯誤規則相同")
+              console.log(PTP_Value +" vs " +resultChose["CategoriesMatched"])
               // 標記此項目為p
               // 並且檢查是否有三明治規則
               // 並且清除另一錯誤明確反應紀錄
@@ -155,6 +170,8 @@ var app = new Vue({
             }
             // 若此次錯誤為明確反應，並且錯誤規則與當前錯誤規則不同，"但是"與上一個另一錯誤的明確反應錯誤規則相同
             else if (other_PTP_Value === resultChose["CategoriesMatched"]) {
+              console.log("此次錯誤為明確反應，並且錯誤規則與當前錯誤規則不同，但是與上一個另一錯誤的明確反應錯誤規則相同")
+              console.log(other_PTP_Value +" vs " +resultChose["CategoriesMatched"])
               // 連續錯誤計數+1
               other_PTP_Value_Count += 1
               console.log('連續另一錯誤明確反應: '+other_PTP_Value_Count)
@@ -174,12 +191,16 @@ var app = new Vue({
             }
             // 若此次錯誤為明確反應，並且錯誤規則為新的類型
             else if (other_PTP_Value !== resultChose["CategoriesMatched"]) {
+              console.log("此此次錯誤為明確反應，並且錯誤規則為新的類型")
               // 則temp連續錯誤計數歸0
               // 並且temp錯誤類型改變
               // lastOther_PTP_cardIndex 更新為此次錯誤
               other_PTP_Value_Count = 1
               other_PTP_Value = resultChose["CategoriesMatched"]
               lastOther_PTP_cardIndex = resultChose["CardNumber"] - 1
+            }
+            else {
+              console.log(resultChose["未知未知"])
             }
           }
         }
@@ -345,6 +366,11 @@ var app = new Vue({
       )
       console.log(returnList)
       returnList[0]["PercentErrorsDifferenceScore"] = "0"
+      while (returnList.length > this.groupCorrectSeqNumber) {
+        returnList.pop()
+      }
+ 
+
       var avgDiff = 0
       for (let i in [...Array(returnList.length-1).keys()]) {
         var indexNum = parseInt(i)
@@ -362,6 +388,7 @@ var app = new Vue({
       var ResultString = ""
       ResultString += "WCST MODE,"+this.dataSet+"\r\n"
       ResultString += "Start Time,"+this.TestStartTime+"\r\n"
+      ResultString += "Client Name,"+this.TesterName+"\r\n"
       ResultString += "Client ID,"+this.TesterID+"\r\n\r\n"
 
       ResultString += "Response Deck\r\n"
@@ -400,6 +427,11 @@ var app = new Vue({
       ResultString += "Learning to Learn,"+(this.finalCalc_ErrorsNumberOfTrails["AverageDifference"]*100).toFixed(2)+"\r\n"
       
       ResultString += "\r\nLearning to Learn Score Worksheet\r\nCategory number,Number of trials,Errors,Percent errors,Percent errors difference score\r\n"
+      // for (let i of [...Array(this.finalCalc_CategoriesCompleted).keys()]) {
+      //   let dataChose = this.finalCalc_ErrorsNumberOfTrails["Table"][i]
+      //   ResultString += dataChose["CategoryNumber"]+","+dataChose["NumberOfTrials"]+","+dataChose["Errors"]+","+(dataChose["PercentErrors"]*100).toFixed(2)+","+(dataChose["PercentErrorsDifferenceScore"]*100).toFixed(2)+"\r\n"
+      // }
+      
       for (let dataChose of this.finalCalc_ErrorsNumberOfTrails["Table"]) {
         ResultString += dataChose["CategoryNumber"]+","+dataChose["NumberOfTrials"]+","+dataChose["Errors"]+","+(dataChose["PercentErrors"]*100).toFixed(2)+","+(dataChose["PercentErrorsDifferenceScore"]*100).toFixed(2)+"\r\n"
       }
@@ -408,6 +440,19 @@ var app = new Vue({
       return ResultString
     },
   },
+  watch:{
+    endPasswordInput: (newVal,oldVal) => {
+      if (newVal === window.test.endPasswordAns) {
+        console.log("OK")
+        if (window.test.fileSaveDone === false) {
+          window.test.fileSaveDone = true
+          window.test.downloadResultFile()
+          window.test.uploadResultFileToGoogleDrive()
+        }
+      }
+    }
+  },
+
   methods: {
     testStart () {
       var nowDatetime = new Date()
@@ -553,10 +598,13 @@ var app = new Vue({
       this.endPasswordInput = ""
       this.googleFilePath = ""
       this.choseSave = [null,null,null,null,]
+      this.reslutList = []
+      this.TesterID = ""
+      this.fileSaveDone = false
     },
     downloadResultFile () {
       var element = document.createElement('a');
-      element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(this.finalResultString));
+      element.setAttribute('href', 'data:text/plain;charset=utf-8,%EF%BB%BF' + encodeURIComponent(this.finalResultString));
       element.setAttribute('download', 'Result.csv');
     
       element.style.display = 'none';
@@ -611,13 +659,26 @@ var app = new Vue({
     },
     // 檢查兩個連續符合明確錯誤規則的紀錄中間是否符合三明治規則
     checkIfSandwich (inputList, startIndex, endIndex, rule, newRule) {
-      console.log("檢查三明治:"+startIndex+"~"+endIndex)
+      console.log("檢查三明治:"+startIndex+"~"+(parseInt(endIndex)-1))
       console.log("使用規則:"+rule)
       console.log("新規則切換:"+newRule)
+      console.log("================")
+      if (inputList[parseInt(startIndex)]["CategoriesMatched"].length != 1) {
+        // 第一個項目不是明確反應，直接判定非三明治規則，跳出
+        console.log("不符合三明治規則")
+        console.log("================")
+        return null
+      }
       for (var nowIndex=parseInt(startIndex); nowIndex<parseInt(endIndex);nowIndex++) {
         // 若中間有任何不包含rule的錯誤規則，則直接判定非三明治規則，跳出
-        if (inputList[nowIndex]["CategoriesMatched"].indexOf(rule) === -1) {return null}
+        console.log(inputList[nowIndex]["CategoriesMatched"])
+        if (inputList[nowIndex]["CategoriesMatched"].indexOf(rule) === -1) {
+          console.log("不符合三明治規則")
+          console.log("================")
+          return null
+        }
       }
+      console.log("================")
       // 若跑到這行，代表兩個符合規則之明確錯誤反應中間皆符合三明治規則，全部標記為p
       if (newRule) {
         // inputList[parseInt(startIndex)]["PerseverativeResponse"] = '- [unambiguous error]'
@@ -680,6 +741,9 @@ var app = new Vue({
       document.getElementById("google-file-url").select()
       document.execCommand("copy")
       alert("複製文字成功");
+    },
+    checkEndPasswordInput(){
+      console.log(123)
     }
   },
   mounted () {
