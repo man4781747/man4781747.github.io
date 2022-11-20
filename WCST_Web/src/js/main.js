@@ -520,8 +520,8 @@ var app = new Vue({
         console.log("OK")
         if (window.test.fileSaveDone === false) {
           window.test.fileSaveDone = true
-          window.test.downloadResultFile()
           window.test.uploadResultFileToGoogleDrive()
+          window.test.downloadResultFile()
         }
       }
     }
@@ -691,19 +691,24 @@ var app = new Vue({
         this.googleUploading = true
         var This = this
         var urlString = encodeURIComponent(this.finalResultString)
-        fetch("https://script.google.com/macros/s/AKfycbxsZtVlxbhbH7z-CQh5nH-gHo0mW8Sq0toOINBoAsK1BirHONePwplVLALkTRZMUsvF/exec?fileName="+this.TestStartTime+"_"+this.TesterID+".csv"+"&contestString="+urlString)
-        .then(function(response) {
-          return response.json();
-        })
-        .then(function(myJson) {
-          if (myJson["result"] === "success") {
-            This.googleFilePath = myJson["newUrl"]
-          }
-          else {
-            alert("上傳至Google雲端錯誤，錯誤資訊:\r\n"+myJson["message"]+"\r\n如有問題請通知管理員")
-          }
+        try {
+          fetch("https://script.google.com/macros/s/AKfycbxsZtVlxbhbH7z-CQh5nH-gHo0mW8Sq0toOINBoAsK1BirHONePwplVLALkTRZMUsvF/exec?fileName="+this.TestStartTime+"_"+this.TesterID+".csv"+"&contestString="+urlString)
+          .then(function(response) {
+            return response.json();
+          })
+          .then(function(myJson) {
+            if (myJson["result"] === "success") {
+              This.googleFilePath = myJson["newUrl"]
+            }
+            else {
+              alert("上傳至Google雲端錯誤，錯誤資訊:\r\n"+myJson["message"]+"\r\n如有問題請通知管理員")
+            }
+            This.googleUploading = false
+          });
+        } catch(e) {
+          alert("上傳至Google雲端錯誤，\r\n如有問題請通知管理員")
           This.googleUploading = false
-        });
+        }
       }
       else {
 
