@@ -520,7 +520,7 @@ var app = new Vue({
         console.log("OK")
         if (window.test.fileSaveDone === false) {
           window.test.fileSaveDone = true
-          window.test.uploadResultFileToGoogleDrive()
+          // window.test.uploadResultFileToGoogleDrive()
           window.test.downloadResultFile()
         }
       }
